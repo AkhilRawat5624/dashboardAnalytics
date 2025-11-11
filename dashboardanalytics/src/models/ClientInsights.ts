@@ -13,7 +13,7 @@ const ClientInsightsSchema = new Schema<IClientInsight>({
     date:{type:Date, required:true},
     newUsers: Number,
     traffic: Number,
-    campaign: Number,
+    campaign: String,
     requestVolume: Number,
     serviceLevel: Number,
     satisfactionScore: Number,

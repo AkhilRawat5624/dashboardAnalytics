@@ -3,7 +3,7 @@ import dbconnect from "@/lib/db";
 import Sale from "@/models/Sale";
 import { NextResponse } from "next/server";
 
-export async function GET(req: Request, res: Response) {
+export async function GET(req: Request) {
     try {
         await dbconnect();
         const { searchParams } = new URL(req.url);
@@ -12,7 +12,7 @@ export async function GET(req: Request, res: Response) {
         const skip = (page - 1) * limit;
 
         const total = await Sale.countDocuments();
-        const sales = await Sale.find().sort({ date: -1 }).skip(skip).limit(limit);
+        const sales = await Sale.find().sort({ date: -1 }).skip(skip).limit(limit).lean();
 
 
         return NextResponse.json({
