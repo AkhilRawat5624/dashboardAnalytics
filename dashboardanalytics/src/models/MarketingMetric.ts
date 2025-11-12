@@ -26,5 +26,5 @@ const MarketingMetricsSchema = new Schema<IMarketingMetric>({
     performance: Number,
 });
 
-export default mongoose.models.IMarketingMetric || mongoose.model<IMarketingMetric>("MarketingMetrics", MarketingMetricsSchema);
+export default mongoose.models.MarketingMetric || mongoose.model<IMarketingMetric>("MarketingMetric", MarketingMetricsSchema);
 
