@@ -15,8 +15,9 @@ import {
 import 'dotenv/config';
 
 async function seed() {
-  dbconnect();
+  await dbconnect();
 
+  console.log("🗑️  Clearing existing data...");
   await Promise.all([
     Sale.deleteMany({}),
     MarketingMetrics.deleteMany({}),
@@ -25,13 +26,22 @@ async function seed() {
     DataSource.deleteMany({}),
   ]);
 
-  await Sale.insertMany(generateFakeSales());
-  await MarketingMetrics.insertMany(generateFakeMarketing());
-  await ClientInsight.insertMany(generateFakeClients());
-  await Financial.insertMany(generateFakeFinancials());
-  await DataSource.insertMany(generateFakeDataSources());
+  console.log("📊 Generating fake data...");
+  const [sales, marketing, clients, financials, dataSources] = await Promise.all([
+    Sale.insertMany(generateFakeSales(30)),
+    MarketingMetrics.insertMany(generateFakeMarketing(25)),
+    ClientInsight.insertMany(generateFakeClients(20)),
+    Financial.insertMany(generateFakeFinancials(15)),
+    DataSource.insertMany(generateFakeDataSources()),
+  ]);
 
-  console.log("🎉 Database seeded successfully with fake data!");
+  console.log("✅ Database seeded successfully!");
+  console.log(`   - Sales: ${sales.length}`);
+  console.log(`   - Marketing: ${marketing.length}`);
+  console.log(`   - Clients: ${clients.length}`);
+  console.log(`   - Financials: ${financials.length}`);
+  console.log(`   - Data Sources: ${dataSources.length}`);
+
   process.exit(0);
 }
 
