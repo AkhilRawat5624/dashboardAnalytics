@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import dbconnect from "@/lib/db";
 import Settings from "@/models/Settings";
-import { securitySettingsSchema, validateQueryParams, validateRequestBody, userIdSchema } from "@/lib/validations";
+import { userIdSchema, updateSettingsSchema, validateQueryParams, validateRequestBody } from "@/lib/validations";
 import { z } from "zod";
 
 export async function GET(req: Request) {
@@ -21,11 +21,15 @@ export async function GET(req: Request) {
 
         const { userId } = validation.data;
 
-        const settings = await Settings.findOne({ userId });
+        let settings = await Settings.findOne({ userId });
+
+        if (!settings) {
+            settings = await Settings.create({ userId });
+        }
 
         return NextResponse.json({
             success: true,
-            data: settings?.security || {},
+            data: settings,
         });
     } catch (error: any) {
         return NextResponse.json(
@@ -42,7 +46,7 @@ export async function PUT(req: Request) {
         const body = await req.json();
         
         // Validate request body
-        const validation = validateRequestBody(body, securitySettingsSchema);
+        const validation = validateRequestBody(body, updateSettingsSchema);
         if (!validation.success) {
             return NextResponse.json(
                 { success: false, message: `Validation error: ${validation.error}` },
@@ -50,17 +54,17 @@ export async function PUT(req: Request) {
             );
         }
 
-        const { userId, ...securityData } = validation.data;
+        const { userId, ...updateData } = validation.data;
 
         const settings = await Settings.findOneAndUpdate(
             { userId },
-            { $set: { security: securityData } },
+            { $set: updateData },
             { new: true, upsert: true, runValidators: true }
         );
 
         return NextResponse.json({
             success: true,
-            data: settings.security,
+            data: settings,
         });
     } catch (error: any) {
         return NextResponse.json(

@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import {  ClipLoader } from 'react-spinners';
 import { analyticsApi } from '@/lib/api';
 import MetricCard from '@/components/dashboard/MetricCard';
 import { DollarSign, ShoppingCart, Users, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function DashboardPage() {
   const [period, setPeriod] = useState('month');
@@ -17,7 +19,8 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading dashboard...</div>
+        <ClipLoader  color="#45d4d7" speedMultiplier={1}  size={70}/>
+        {/* <div className="text-lg">Loading dashboard...</div> */}
       </div>
     );
   }
@@ -31,6 +34,7 @@ export default function DashboardPage() {
   }
 
   const analytics = data?.data.data;
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
     <div className="p-8 space-y-8">
@@ -102,27 +106,46 @@ export default function DashboardPage() {
       {/* Top Performers */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="border rounded-lg p-6">
-          <h3 className="font-semibold mb-4">Top Regions</h3>
-          <div className="space-y-3">
-            {analytics?.topPerformers.regions.map((region, idx) => (
-              <div key={idx} className="flex justify-between items-center">
-                <span className="font-medium">{region.region}</span>
-                <span className="text-gray-600">${region.revenue.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
+          <h3 className="font-semibold mb-4">Top Regions by Revenue</h3>
+          {analytics?.topPerformers.regions && analytics.topPerformers.regions.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analytics.topPerformers.regions}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="region" />
+                <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(value: any) => `$${value.toLocaleString()}`} />
+                <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500">No region data available</p>
+          )}
         </div>
 
         <div className="border rounded-lg p-6">
-          <h3 className="font-semibold mb-4">Top Campaigns</h3>
-          <div className="space-y-3">
-            {analytics?.topPerformers.campaigns.map((campaign, idx) => (
-              <div key={idx} className="flex justify-between items-center">
-                <span className="font-medium">{campaign.campaignId}</span>
-                <span className="text-gray-600">{campaign.avgPerformance}%</span>
-              </div>
-            ))}
-          </div>
+          <h3 className="font-semibold mb-4">Top Campaigns Performance</h3>
+          {analytics?.topPerformers.campaigns && analytics.topPerformers.campaigns.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={analytics.topPerformers.campaigns}
+                  dataKey="avgPerformance"
+                  nameKey="campaignId"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={(entry) => `${entry.campaignId}: ${entry.avgPerformance}%`}
+                >
+                  {analytics.topPerformers.campaigns.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500">No campaign data available</p>
+          )}
         </div>
       </div>
     </div>

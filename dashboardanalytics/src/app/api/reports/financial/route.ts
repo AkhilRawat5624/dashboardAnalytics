@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbconnect from "@/lib/db";
 import Financial, { IFinancial } from "@/models/Financial";
+import { financialQuerySchema, validateQueryParams } from "@/lib/validations";
 
 /**
  * GET /api/reports/financial
@@ -15,16 +16,32 @@ export async function GET(req: Request) {
     await dbconnect();
 
     const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-    const period = searchParams.get("period") || "monthly";
+    
+    // Validate query parameters
+    const validation = validateQueryParams(searchParams, financialQuerySchema);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, message: `Validation error: ${validation.error}` },
+        { status: 400 }
+      );
+    }
+
+    const { startDate, endDate, period = "monthly" } = validation.data;
 
     // Build date filter
     const matchStage: any = {};
     if (startDate || endDate) {
       matchStage.date = {};
-      if (startDate) matchStage.date.$gte = new Date(startDate);
-      if (endDate) matchStage.date.$lte = new Date(endDate);
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchStage.date.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchStage.date.$lte = end;
+      }
     }
 
     // Latest financial snapshot

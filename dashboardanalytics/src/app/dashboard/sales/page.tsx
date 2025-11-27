@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '@/lib/api';
 import MetricCard from '@/components/dashboard/MetricCard';
 import { DollarSign, ShoppingCart, TrendingUp, Target } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { ClipLoader } from 'react-spinners';
 
 export default function SalesPage() {
   const [page, setPage] = useState(1);
@@ -56,10 +57,24 @@ export default function SalesPage() {
     return Array.from(regionMap.values()).sort((a, b) => b.revenue - a.revenue);
   }, [data]);
 
+  // Time series data
+  const timeSeries = useMemo(() => {
+    const sales = data?.data.data || [];
+    return sales.slice(-15).map((sale: any) => ({
+      date: new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      revenue: sale.revenue || 0,
+      orders: sale.orders || 0,
+      target: sale.target || 0,
+    }));
+  }, [data]);
+
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading sales data...</div>
+         <ClipLoader  color="#45d4d7" speedMultiplier={1}  size={70}/>
+        {/* <div className="text-lg">Loading sales data...</div> */}
       </div>
     );
   }
@@ -112,7 +127,55 @@ export default function SalesPage() {
         />
       </div>
 
-      {/* Regional Performance Chart */}
+      {/* Charts Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Revenue Trend */}
+        {timeSeries.length > 0 && (
+          <div className="bg-white p-6 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-4">Revenue & Orders Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={timeSeries}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" angle={-45} textAnchor="end" height={80} />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} name="Revenue ($)" />
+                <Line yAxisId="right" type="monotone" dataKey="orders" stroke="#10b981" strokeWidth={2} name="Orders" />
+                <Line yAxisId="left" type="monotone" dataKey="target" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 5" name="Target" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Regional Performance */}
+        {byRegion.length > 0 && (
+          <div className="bg-white p-6 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-4">Revenue by Region</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={byRegion}
+                  dataKey="revenue"
+                  nameKey="region"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={(entry) => `${entry.region}: $${(entry.revenue / 1000).toFixed(0)}k`}
+                >
+                  {byRegion.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: any) => `$${value.toLocaleString()}`} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Regional Performance Bar Chart */}
       {byRegion.length > 0 && (
         <div className="bg-white p-6 rounded-lg border">
           <h3 className="text-lg font-semibold mb-4">Performance by Region</h3>

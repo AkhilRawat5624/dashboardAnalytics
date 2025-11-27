@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from 'recharts';
 
 interface ClientMetrics {
   totalNewUsers: number;
@@ -119,7 +120,8 @@ export default function ClientsPage() {
     );
   }
 
-  const { summary, serviceLevel, campaignPerformance, trend, growthAnalysis } = data;
+  const { summary, serviceLevel, campaignPerformance, trend, growthAnalysis, satisfactionDistribution } = data;
+  const COLORS = ['#ef4444', '#f59e0b', '#fbbf24', '#10b981', '#3b82f6'];
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -166,7 +168,7 @@ export default function ClientsPage() {
         </div>
 
         {/* Service Level & Growth */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Service Level */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Service Level</h2>
@@ -198,98 +200,131 @@ export default function ClientsPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Growth Analysis</h2>
             {growthAnalysis ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <span className="text-gray-600">User Growth</span>
-                  <span className={`text-lg font-semibold ${growthAnalysis.userGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {growthAnalysis.userGrowth >= 0 ? '+' : ''}{growthAnalysis.userGrowth.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <span className="text-gray-600">Traffic Growth</span>
-                  <span className={`text-lg font-semibold ${growthAnalysis.trafficGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {growthAnalysis.trafficGrowth >= 0 ? '+' : ''}{growthAnalysis.trafficGrowth.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <span className="text-gray-600">Satisfaction Trend</span>
-                  <span className={`text-lg font-semibold capitalize ${
-                    growthAnalysis.satisfactionTrend === 'improving' ? 'text-green-600' :
-                    growthAnalysis.satisfactionTrend === 'declining' ? 'text-red-600' : 'text-gray-600'
-                  }`}>
-                    {growthAnalysis.satisfactionTrend}
-                  </span>
-                </div>
-              </div>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart 
+                  data={[
+                    { metric: 'User Growth', value: growthAnalysis.userGrowth },
+                    { metric: 'Traffic Growth', value: growthAnalysis.trafficGrowth },
+                  ]}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="metric" width={120} />
+                  <Tooltip formatter={(value: any) => `${value.toFixed(1)}%`} />
+                  <Bar dataKey="value" fill="#3b82f6" name="Growth %" />
+                </BarChart>
+              </ResponsiveContainer>
             ) : (
               <p className="text-gray-500">Insufficient data for growth analysis</p>
+            )}
+            {growthAnalysis && (
+              <div className="mt-4 p-3 bg-gray-50 rounded text-center">
+                <span className="text-gray-600">Satisfaction Trend: </span>
+                <span className={`font-semibold capitalize ${
+                  growthAnalysis.satisfactionTrend === 'improving' ? 'text-green-600' :
+                  growthAnalysis.satisfactionTrend === 'declining' ? 'text-red-600' : 'text-gray-600'
+                }`}>
+                  {growthAnalysis.satisfactionTrend}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Satisfaction Distribution */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Satisfaction Distribution</h2>
+            {satisfactionDistribution && satisfactionDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={satisfactionDistribution}
+                    dataKey="count"
+                    nameKey="_id"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {satisfactionDistribution.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-500">No satisfaction data available</p>
             )}
           </div>
         </div>
 
         {/* Campaign Performance */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Campaign Performance</h2>
-          {campaignPerformance.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 text-gray-600 font-medium">Campaign</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">New Users</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Traffic</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Conversion</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Satisfaction</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {campaignPerformance.map((campaign, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{campaign.campaign}</td>
-                      <td className="py-3 px-4 text-right text-gray-900">{campaign.newUsers.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-right text-gray-600">{campaign.traffic.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-right text-green-600 font-medium">{campaign.conversionRate}%</td>
-                      <td className="py-3 px-4 text-right text-gray-900">{campaign.avgSatisfaction.toFixed(1)}/5</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-gray-500">No campaign data available</p>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Campaign Performance - Users</h2>
+            {campaignPerformance.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={campaignPerformance}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="campaign" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="newUsers" fill="#3b82f6" name="New Users" />
+                  <Bar dataKey="traffic" fill="#8b5cf6" name="Traffic" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-500">No campaign data available</p>
+            )}
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Campaign Performance - Metrics</h2>
+            {campaignPerformance.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={campaignPerformance}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="campaign" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="conversionRate" fill="#10b981" name="Conversion %" />
+                  <Bar dataKey="avgSatisfaction" fill="#f59e0b" name="Satisfaction" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-500">No campaign data available</p>
+            )}
+          </div>
         </div>
 
         {/* Trend Chart */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Daily Trend</h2>
           {trend.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-3 text-gray-600 font-medium">Date</th>
-                    <th className="text-right py-2 px-3 text-gray-600 font-medium">Users</th>
-                    <th className="text-right py-2 px-3 text-gray-600 font-medium">Traffic</th>
-                    <th className="text-right py-2 px-3 text-gray-600 font-medium">Conversion</th>
-                    <th className="text-right py-2 px-3 text-gray-600 font-medium">Satisfaction</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trend.slice(-10).map((item, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="py-2 px-3 text-gray-900">
-                        {new Date(item.date).toLocaleDateString()}
-                      </td>
-                      <td className="py-2 px-3 text-right text-gray-900">{item.newUsers}</td>
-                      <td className="py-2 px-3 text-right text-gray-600">{item.traffic}</td>
-                      <td className="py-2 px-3 text-right text-green-600">{item.conversionRate}%</td>
-                      <td className="py-2 px-3 text-right text-gray-900">{item.avgSatisfaction.toFixed(1)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={trend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip 
+                  labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                  formatter={(value: any) => typeof value === 'number' ? value.toFixed(1) : value}
+                />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="newUsers" stroke="#3b82f6" name="New Users" strokeWidth={2} />
+                <Line yAxisId="left" type="monotone" dataKey="traffic" stroke="#8b5cf6" name="Traffic" strokeWidth={2} />
+                <Line yAxisId="right" type="monotone" dataKey="avgSatisfaction" stroke="#10b981" name="Satisfaction" strokeWidth={2} />
+                <Line yAxisId="right" type="monotone" dataKey="conversionRate" stroke="#f59e0b" name="Conversion %" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
           ) : (
             <p className="text-gray-500">No trend data available</p>
           )}

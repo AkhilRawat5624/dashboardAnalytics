@@ -2,32 +2,61 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { ClipLoader } from 'react-spinners';
 import axios from 'axios';
-import { MousePointer, DollarSign, Target, TrendingUp, Globe, BarChart3 } from 'lucide-react';
+import { MousePointer, DollarSign, Target, TrendingUp, Globe, BarChart3, Filter } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function MarketingPage() {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [campaignId, setCampaignId] = useState('');
+  // Form state (local, doesn't trigger refetch)
+  const [startDateInput, setStartDateInput] = useState('');
+  const [endDateInput, setEndDateInput] = useState('');
+  const [campaignIdInput, setCampaignIdInput] = useState('');
+
+  // Applied filters (used in query key)
+  const [appliedFilters, setAppliedFilters] = useState({
+    startDate: '',
+    endDate: '',
+    campaignId: '',
+  });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['marketing', startDate, endDate, campaignId],
+    queryKey: ['marketing', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.campaignId],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
-      if (campaignId) params.append('campaignId', campaignId);
+      if (appliedFilters.startDate) params.append('startDate', appliedFilters.startDate);
+      if (appliedFilters.endDate) params.append('endDate', appliedFilters.endDate);
+      if (appliedFilters.campaignId) params.append('campaignId', appliedFilters.campaignId);
       
       const response = await axios.get(`/api/reports/marketing?${params.toString()}`);
       return response.data;
     },
   });
 
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      startDate: startDateInput,
+      endDate: endDateInput,
+      campaignId: campaignIdInput,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setStartDateInput('');
+    setEndDateInput('');
+    setCampaignIdInput('');
+    setAppliedFilters({
+      startDate: '',
+      endDate: '',
+      campaignId: '',
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading marketing data...</div>
+         <ClipLoader  color="#45d4d7" speedMultiplier={1}  size={70}/>
+        {/* <div className="text-lg">Loading marketing data...</div> */}
       </div>
     );
   }
@@ -52,39 +81,71 @@ export default function MarketingPage() {
         </div>
       </div>
 
-      <div className="flex gap-4 flex-wrap">
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
-          placeholder="Start Date"
-        />
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
-          placeholder="End Date"
-        />
-        <input
-          type="text"
-          value={campaignId}
-          onChange={(e) => setCampaignId(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
-          placeholder="Campaign ID"
-        />
+      <div className="flex gap-4 flex-wrap items-end">
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">Start Date</label>
+          <input
+            type="date"
+            value={startDateInput}
+            onChange={(e) => setStartDateInput(e.target.value)}
+            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">End Date</label>
+          <input
+            type="date"
+            value={endDateInput}
+            onChange={(e) => setEndDateInput(e.target.value)}
+            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">Campaign ID</label>
+          <input
+            type="text"
+            value={campaignIdInput}
+            onChange={(e) => setCampaignIdInput(e.target.value)}
+            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter campaign ID"
+          />
+        </div>
         <button
-          onClick={() => {
-            setStartDate('');
-            setEndDate('');
-            setCampaignId('');
-          }}
-          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+          onClick={handleApplyFilters}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
         >
-          Clear Filters
+          <Filter className="h-4 w-4" />
+          Apply Filters
+        </button>
+        <button
+          onClick={handleClearFilters}
+          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        >
+          Clear
         </button>
       </div>
+
+      {/* Active Filters Display */}
+      {(appliedFilters.startDate || appliedFilters.endDate || appliedFilters.campaignId) && (
+        <div className="flex gap-2 flex-wrap items-center text-sm">
+          <span className="text-gray-600">Active filters:</span>
+          {appliedFilters.startDate && (
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
+              From: {new Date(appliedFilters.startDate).toLocaleDateString()}
+            </span>
+          )}
+          {appliedFilters.endDate && (
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
+              To: {new Date(appliedFilters.endDate).toLocaleDateString()}
+            </span>
+          )}
+          {appliedFilters.campaignId && (
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
+              Campaign: {appliedFilters.campaignId}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard

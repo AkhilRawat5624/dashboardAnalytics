@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbconnect from "@/lib/db";
 import ClientInsight, { IClientInsight } from "@/models/ClientInsights";
+import { clientInsightsQuerySchema, validateQueryParams } from "@/lib/validations";
 
 /**
  * GET /api/reports/client-insights
@@ -15,16 +16,32 @@ export async function GET(req: Request) {
     await dbconnect();
 
     const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-    const campaign = searchParams.get("campaign");
+    
+    // Validate query parameters
+    const validation = validateQueryParams(searchParams, clientInsightsQuerySchema);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, message: `Validation error: ${validation.error}` },
+        { status: 400 }
+      );
+    }
+
+    const { startDate, endDate, campaign } = validation.data;
 
     // Build filters
     const matchStage: any = {};
     if (startDate || endDate) {
       matchStage.date = {};
-      if (startDate) matchStage.date.$gte = new Date(startDate);
-      if (endDate) matchStage.date.$lte = new Date(endDate);
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchStage.date.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchStage.date.$lte = end;
+      }
     }
     if (campaign) {
       matchStage.campaign = campaign;

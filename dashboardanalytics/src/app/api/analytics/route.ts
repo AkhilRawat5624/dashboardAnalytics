@@ -5,6 +5,7 @@ import MarketingMetric from "@/models/MarketingMetric";
 import ClientInsight from "@/models/ClientInsights";
 import Financial, { IFinancial } from "@/models/Financial";
 import DataSource from "@/models/DataSource";
+import { analyticsQuerySchema, validateQueryParams } from "@/lib/validations";
 
 /**
  * GET /api/analytics
@@ -17,7 +18,17 @@ export async function GET(req: Request) {
         await dbconnect();
 
         const { searchParams } = new URL(req.url);
-        const period = searchParams.get("period") || "month";
+        
+        // Validate query parameters
+        const validation = validateQueryParams(searchParams, analyticsQuerySchema);
+        if (!validation.success) {
+            return NextResponse.json(
+                { success: false, message: `Validation error: ${validation.error}` },
+                { status: 400 }
+            );
+        }
+
+        const { period = "month" } = validation.data;
 
         // Calculate date range
         const now = new Date();

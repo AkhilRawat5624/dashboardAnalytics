@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ComposedChart, Cell } from 'recharts';
 
 interface LatestFinancial {
   date: string;
@@ -293,26 +294,31 @@ export default function FinancialPage() {
         {growthAnalysis && (
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Growth Analysis</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-2">Net Worth Growth</div>
-                <div className={`text-3xl font-bold ${growthAnalysis.netWorthGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {growthAnalysis.netWorthGrowth >= 0 ? '+' : ''}{growthAnalysis.netWorthGrowth.toFixed(1)}%
-                </div>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-2">Profit Growth</div>
-                <div className={`text-3xl font-bold ${growthAnalysis.profitGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {growthAnalysis.profitGrowth >= 0 ? '+' : ''}{growthAnalysis.profitGrowth.toFixed(1)}%
-                </div>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-2">Capital Growth</div>
-                <div className={`text-3xl font-bold ${growthAnalysis.capitalGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {growthAnalysis.capitalGrowth >= 0 ? '+' : ''}{growthAnalysis.capitalGrowth.toFixed(1)}%
-                </div>
-              </div>
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart 
+                data={[
+                  { metric: 'Net Worth', growth: growthAnalysis.netWorthGrowth },
+                  { metric: 'Profit', growth: growthAnalysis.profitGrowth },
+                  { metric: 'Capital', growth: growthAnalysis.capitalGrowth },
+                ]}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="metric" />
+                <YAxis tickFormatter={(value) => `${value}%`} />
+                <Tooltip formatter={(value: any) => `${value.toFixed(1)}%`} />
+                <Legend />
+                <Bar 
+                  dataKey="growth" 
+                  name="Growth %" 
+                  fill="#3b82f6"
+                  label={{ position: 'top', formatter: (value: any) => `${value.toFixed(1)}%` }}
+                >
+                  {[growthAnalysis.netWorthGrowth, growthAnalysis.profitGrowth, growthAnalysis.capitalGrowth].map((value, index) => (
+                    <Cell key={`cell-${index}`} fill={value >= 0 ? '#10b981' : '#ef4444'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
 
@@ -320,28 +326,29 @@ export default function FinancialPage() {
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Profitability Trend</h2>
           {profitabilityTrend.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 text-gray-600 font-medium">Period</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Gross Profit</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Operation Profit</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Profit Margin</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {profitabilityTrend.map((item, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{formatPeriod(item.period)}</td>
-                      <td className="py-3 px-4 text-right text-gray-900">{formatCurrency(item.grossProfit)}</td>
-                      <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrency(item.operationProfit)}</td>
-                      <td className="py-3 px-4 text-right text-gray-900">{item.profitMargin.toFixed(1)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <ComposedChart 
+                data={profitabilityTrend.map(item => ({
+                  ...item,
+                  periodLabel: formatPeriod(item.period)
+                }))}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="periodLabel" angle={-45} textAnchor="end" height={80} />
+                <YAxis yAxisId="left" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value}%`} />
+                <Tooltip 
+                  formatter={(value: any, name: string) => {
+                    if (name === 'Profit Margin') return `${value.toFixed(1)}%`;
+                    return formatCurrency(value);
+                  }}
+                />
+                <Legend />
+                <Bar yAxisId="left" dataKey="grossProfit" fill="#10b981" name="Gross Profit" />
+                <Bar yAxisId="left" dataKey="operationProfit" fill="#3b82f6" name="Operation Profit" />
+                <Line yAxisId="right" type="monotone" dataKey="profitMargin" stroke="#f59e0b" strokeWidth={2} name="Profit Margin" />
+              </ComposedChart>
+            </ResponsiveContainer>
           ) : (
             <p className="text-gray-500">No profitability data available</p>
           )}
@@ -351,30 +358,30 @@ export default function FinancialPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Liquidity Trend</h2>
           {liquidityTrend.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 text-gray-600 font-medium">Period</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Current Ratio</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Cash Flow Ratio</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Liquidity Ratio</th>
-                    <th className="text-right py-3 px-4 text-gray-600 font-medium">Working Capital</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {liquidityTrend.map((item, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{formatPeriod(item.period)}</td>
-                      <td className="py-3 px-4 text-right text-gray-900">{item.currentRatio.toFixed(2)}</td>
-                      <td className="py-3 px-4 text-right text-gray-900">{item.cashFlowRatio.toFixed(2)}</td>
-                      <td className="py-3 px-4 text-right text-gray-900">{item.liquidityRatio.toFixed(2)}</td>
-                      <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrency(item.workingCapital)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <ComposedChart 
+                data={liquidityTrend.map(item => ({
+                  ...item,
+                  periodLabel: formatPeriod(item.period)
+                }))}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="periodLabel" angle={-45} textAnchor="end" height={80} />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                <Tooltip 
+                  formatter={(value: any, name: string) => {
+                    if (name === 'Working Capital') return formatCurrency(value);
+                    return value.toFixed(2);
+                  }}
+                />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="currentRatio" stroke="#3b82f6" strokeWidth={2} name="Current Ratio" />
+                <Line yAxisId="left" type="monotone" dataKey="cashFlowRatio" stroke="#8b5cf6" strokeWidth={2} name="Cash Flow Ratio" />
+                <Line yAxisId="left" type="monotone" dataKey="liquidityRatio" stroke="#f59e0b" strokeWidth={2} name="Liquidity Ratio" />
+                <Bar yAxisId="right" dataKey="workingCapital" fill="#10b981" name="Working Capital" />
+              </ComposedChart>
+            </ResponsiveContainer>
           ) : (
             <p className="text-gray-500">No liquidity data available</p>
           )}

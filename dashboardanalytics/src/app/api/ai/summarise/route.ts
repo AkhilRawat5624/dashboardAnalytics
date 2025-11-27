@@ -5,6 +5,14 @@ import Sale from "@/models/Sale";
 import MarketingMetric from "@/models/MarketingMetric";
 import ClientInsight from "@/models/ClientInsights";
 import Financial from "@/models/Financial";
+import { z } from "zod";
+import { validateRequestBody } from "@/lib/validations";
+
+const aiSummariseBodySchema = z.object({
+  period: z.enum(["daily", "weekly", "monthly"]).default("weekly"),
+  includeMetrics: z.array(z.string()).default(["all"]),
+  format: z.enum(["brief", "detailed"]).default("brief"),
+});
 
 /**
  * POST /api/ai/summarise
@@ -19,7 +27,17 @@ export async function POST(req: Request) {
     await dbconnect();
 
     const body = await req.json();
-    const { period = "weekly", includeMetrics = ["all"], format = "brief" } = body;
+    
+    // Validate request body
+    const validation = validateRequestBody(body, aiSummariseBodySchema);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, message: `Validation error: ${validation.error}` },
+        { status: 400 }
+      );
+    }
+
+    const { period, includeMetrics, format } = validation.data;
 
     // Calculate date range based on period
     const now = new Date();

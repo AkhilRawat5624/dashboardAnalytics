@@ -7,6 +7,14 @@ import MarketingMetric from "@/models/MarketingMetric";
 import ClientInsight from "@/models/ClientInsights";
 import Financial from "@/models/Financial";
 import crypto from "crypto";
+import { z } from "zod";
+import { validateRequestBody } from "@/lib/validations";
+
+const aiSuggestBodySchema = z.object({
+  type: z.enum(["sales", "marketing", "financial", "client", "general"]).default("general"),
+  context: z.record(z.any()).optional().default({}),
+  useCache: z.boolean().optional().default(true),
+});
 
 /**
  * POST /api/ai/suggest
@@ -21,7 +29,17 @@ export async function POST(req: Request) {
     await dbconnect();
 
     const body = await req.json();
-    const { type = "general", context = {}, useCache = true } = body;
+    
+    // Validate request body
+    const validation = validateRequestBody(body, aiSuggestBodySchema);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, message: `Validation error: ${validation.error}` },
+        { status: 400 }
+      );
+    }
+
+    const { type, context, useCache } = validation.data;
 
     // Create context hash for caching
     const contextString = JSON.stringify({ type, context });
