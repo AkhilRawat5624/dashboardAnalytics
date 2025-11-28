@@ -3,10 +3,27 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import PasswordReset from '@/models/PasswordReset';
 import { validateRequestBody, resetPasswordSchema, verifyResetTokenSchema } from '@/lib/validations';
-import bcrypt from 'bcryptjs';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
+import bcrypt from 'bcrypt';
 
 // Verify reset token
 export async function GET(request: NextRequest) {
+  // Apply rate limiting for token verification
+  const rateLimitResult = await applyRateLimit(
+    request,
+    RATE_LIMITS.API_GENERAL,
+    'rl:verify-token'
+  );
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: rateLimitResult.error, valid: false },
+      { 
+        status: 429,
+        headers: rateLimitResult.headers,
+      }
+    );
+  }
   try {
     const searchParams = request.nextUrl.searchParams;
     const token = searchParams.get('token');
@@ -49,6 +66,23 @@ export async function GET(request: NextRequest) {
 // Reset password
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = await applyRateLimit(
+      request,
+      RATE_LIMITS.AUTH_PASSWORD_RESET,
+      'rl:reset-password'
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { 
+          status: 429,
+          headers: rateLimitResult.headers,
+        }
+      );
+    }
+
     const body = await request.json();
     
     // Validate request body
@@ -98,9 +132,16 @@ export async function POST(request: NextRequest) {
     resetRecord.used = true;
     await resetRecord.save();
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'Password has been reset successfully',
     });
+
+    // Add rate limit headers
+    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
 
   } catch (error: any) {
     console.error('Reset password error:', error);

@@ -3,10 +3,28 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import PasswordReset from '@/models/PasswordReset';
 import { validateRequestBody, forgotPasswordSchema } from '@/lib/validations';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = await applyRateLimit(
+      request,
+      RATE_LIMITS.AUTH_PASSWORD_RESET,
+      'rl:password-reset'
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { 
+          status: 429,
+          headers: rateLimitResult.headers,
+        }
+      );
+    }
+
     const body = await request.json();
     
     // Validate request body
@@ -49,10 +67,17 @@ export async function POST(request: NextRequest) {
       // await sendPasswordResetEmail(user.email, resetUrl);
     }
 
-    // Always return success message
-    return NextResponse.json({
+    // Always return success message with rate limit headers
+    const response = NextResponse.json({
       message: 'If an account exists with that email, a password reset link has been sent.',
     });
+
+    // Add rate limit headers
+    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
 
   } catch (error: any) {
     console.error('Forgot password error:', error);

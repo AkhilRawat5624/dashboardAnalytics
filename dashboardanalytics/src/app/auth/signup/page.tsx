@@ -46,7 +46,7 @@ export default function SignUpPage() {
     }
 
     try {
-      await axios.post('/api/auth/signup', {
+      const response = await axios.post('/api/auth/signup', {
         name: formData.name,
         email: formData.email,
         username: formData.username,
@@ -58,7 +58,12 @@ export default function SignUpPage() {
         router.push('/auth/signin');
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred');
+      // Handle rate limiting errors
+      if (err.response?.status === 429) {
+        setError(err.response?.data?.error || 'Too many signup attempts. Please try again later.');
+      } else {
+        setError(err.response?.data?.error || 'An error occurred');
+      }
     } finally {
       setIsLoading(false);
     }
