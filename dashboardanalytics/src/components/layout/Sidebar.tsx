@@ -9,7 +9,8 @@ import {
   DollarSign, 
   BarChart3,
   Settings,
-  Shield
+  Shield,
+  User as UserIcon
 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -20,6 +21,7 @@ const navigation = [
   { name: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'analyst', 'viewer'] },
   { name: 'Financial', href: '/dashboard/financial', icon: DollarSign, roles: ['admin', 'analyst', 'viewer'] },
   { name: 'Admin Panel', href: '/dashboard/admin', icon: Shield, roles: ['admin'] },
+  { name: 'Profile', href: '/dashboard/profile', icon: UserIcon, roles: ['admin', 'analyst', 'viewer'] },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'analyst', 'viewer'] },
 ];
 

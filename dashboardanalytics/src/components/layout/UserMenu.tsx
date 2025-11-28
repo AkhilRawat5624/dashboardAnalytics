@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, UserCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function UserMenu() {
@@ -29,6 +29,11 @@ export default function UserMenu() {
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/auth/signin' });
+  };
+
+  const handleProfile = () => {
+    router.push('/dashboard/profile');
+    setIsOpen(false);
   };
 
   const handleSettings = () => {
@@ -75,6 +80,13 @@ export default function UserMenu() {
 
           {/* Menu Items */}
           <div className="py-2">
+            <button
+              onClick={handleProfile}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <UserCircle className="h-4 w-4" />
+              Profile
+            </button>
             <button
               onClick={handleSettings}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"

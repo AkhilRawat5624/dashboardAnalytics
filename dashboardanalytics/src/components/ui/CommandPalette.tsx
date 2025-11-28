@@ -12,7 +12,9 @@ import {
   Settings,
   FileText,
   Sparkles,
-  X
+  X,
+  User as UserIcon,
+  Shield
 } from 'lucide-react';
 
 interface Command {
@@ -72,12 +74,28 @@ export default function CommandPalette() {
       keywords: ['profit', 'liquidity', 'capital', 'ratios'],
     },
     {
+      id: 'profile',
+      label: 'Profile',
+      description: 'Manage your account and password',
+      icon: <UserIcon className="h-4 w-4" />,
+      action: () => router.push('/dashboard/profile'),
+      keywords: ['account', 'password', 'user', 'me'],
+    },
+    {
       id: 'settings',
       label: 'Settings',
       description: 'Manage application preferences',
       icon: <Settings className="h-4 w-4" />,
       action: () => router.push('/dashboard/settings'),
       keywords: ['preferences', 'config', 'configuration'],
+    },
+    {
+      id: 'admin',
+      label: 'Admin Panel',
+      description: 'Manage users and system settings',
+      icon: <Shield className="h-4 w-4" />,
+      action: () => router.push('/dashboard/admin'),
+      keywords: ['admin', 'users', 'management', 'system'],
     },
     {
       id: 'sales-api',
