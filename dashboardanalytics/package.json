@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "create-admin": "node scripts/create-admin.js"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -42,6 +44,8 @@
     "eslint-config-next": "15.5.4",
     "nodemon": "^3.1.10",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, User } from 'lucide-react';
+import { Search } from 'lucide-react';
 import NotificationDropdown from '@/components/ui/NotificationDropdown';
+import UserMenu from './UserMenu';
 
 export default function Header() {
   const [isMac, setIsMac] = useState(false);
@@ -46,10 +47,7 @@ export default function Header() {
         </div>
         <div className="flex items-center space-x-4">
           <NotificationDropdown />
-          <button className="flex items-center space-x-2 p-2 text-gray-700 hover:text-gray-900 transition-colors">
-            <User className="h-5 w-5" />
-            <span className="text-sm font-medium">Admin</span>
-          </button>
+          <UserMenu />
         </div>
       </div>
     </header>
